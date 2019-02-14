@@ -1,5 +1,8 @@
 # PythonSimpleShoot
 A simple improved shoot game based on https://github.com/Kill-Console/PythonShootGame.
+* add two types of enemy planes
+* add two types of weapons (bomb, power bullet)
+* improve plane collide check
 
 # Introduce
 This project only include three simple .py files:
@@ -18,4 +21,4 @@ $ python shooter.py
 # How to Play
 * use UP/DOWN/LEFT/RIGHT key to control plane
 * use SPACE key to shoot bomb
-* use z key to pause or resum game
+* use z key to pause or resume game
