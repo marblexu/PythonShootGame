@@ -14,3 +14,8 @@ This project only include three simple .py files:
 
 # How To Start Game
 $ python shooter.py
+
+# How to Play
+* use UP/DOWN/LEFT/RIGHT key to control plane
+* use SPACE key to shoot bomb
+* use z key to pause or resum game
