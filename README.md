@@ -1,5 +1,5 @@
-# PythonSimpleShoot
-A simple improved shoot game based on https://github.com/Kill-Console/PythonShootGame.
+# PythonShootGame
+A improved shoot game based on https://github.com/Kill-Console/PythonShootGame.
 * add two types of enemy planes
 * add two types of weapons (bomb, power bullet)
 * improve plane collide check
