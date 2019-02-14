@@ -22,3 +22,6 @@ $ python shooter.py
 * use UP/DOWN/LEFT/RIGHT key to control plane
 * use SPACE key to shoot bomb
 * use z key to pause or resume game
+
+# Demo
+![screenshot](https://raw.githubusercontent.com/marblexu/PythonSimpleShoot/master/demo/screenshot1.png)
