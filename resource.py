@@ -18,7 +18,7 @@ def initWeaponGroups():
 	weapon_groups.append(WeaponGroup(bullet1_surface, bullet_sound, 1))
 	
 	bullet2_surface = shoot_img.subsurface(pygame.Rect(69, 78, 9, 21))
-	weapon_groups.append(WeaponGroup(bullet2_surface, bullet_sound, 3))
+	weapon_groups.append(WeaponGroup(bullet2_surface, bullet_sound, 2))
 	
 	bomb_surface = shoot_img.subsurface(pygame.Rect(828, 691, 28, 57))
 	bomb_sound = pygame.mixer.Sound('resource/sound/use_bomb.wav')
@@ -40,7 +40,7 @@ def initHero():
 	hero_down_surface.append(shoot_img.subsurface(pygame.Rect(432, 624, 102, 126)))
 	hero_pos = [200, 500]
 
-	return Hero(hero_surface, hero_down_surface, hero_pos, initWeaponGroups())
+	return Hero(hero_surface, hero_down_surface, hero_pos, initWeaponGroups(), 3)
 
 
 def initEnemyGroups():
@@ -82,7 +82,7 @@ def initEnemyGroups():
 	enemy3_down_surface.append(shoot_img.subsurface(pygame.Rect(0, 747, 166, 261)))
 	enemy3_down_sound = pygame.mixer.Sound('resource/sound/enemy3_down.wav')
 	enemy3_down_sound.set_volume(0.3)
-	enemy_groups.append(EnemyGroup(enemy3_surface, enemy3_hit_surface, enemy3_down_surface, enemy3_down_sound, 9000, 9, 1))
+	enemy_groups.append(EnemyGroup(enemy3_surface, enemy3_hit_surface, enemy3_down_surface, enemy3_down_sound, 9000, 12, 1))
 	
 	return enemy_groups
 
@@ -111,6 +111,6 @@ def initGame():
 	game_over_sound = pygame.mixer.Sound('resource/sound/game_over.wav')
 	game_over_sound.set_volume(0.3)	
 	
-	bomb_surface = shoot_img.subsurface(pygame.Rect(810, 691, 63, 57))
-	
-	return (background, gameover, game_over_sound, bomb_surface)
+	bomb_surface = pygame.transform.scale(shoot_img.subsurface(pygame.Rect(828, 691, 28, 57)), (19,40))
+	plane_surface = pygame.transform.scale(shoot_img.subsurface(pygame.Rect(5, 99, 96, 96)), (36,36))
+	return (background, gameover, game_over_sound, bomb_surface, plane_surface)

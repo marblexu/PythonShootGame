@@ -20,6 +20,14 @@ class GameGift(Enum):
 	PowerBullet = 1
 	Laser = 2
 
+class BulletType(Enum):
+	OneWay = 0
+	TwoWay = 1
+	ThreeWay = 2
+	ThreeWayPower = 3
+
+bullet_type = [BulletType.OneWay, BulletType.TwoWay, BulletType.ThreeWay, BulletType.ThreeWayPower]
+
 class Weapon(pygame.sprite.Sprite):
 	def __init__(self, weapon_surface, weapon_init_pos):
 		pygame.sprite.Sprite.__init__(self)
@@ -80,20 +88,26 @@ class Gift(pygame.sprite.Sprite):
 			self.kill()
 	
 class Hero(pygame.sprite.Sprite):
-	def __init__(self, hero_surface, hero_down_surface, hero_init_pos, weapon_groups):
+	def __init__(self, hero_surface, hero_down_surface, hero_init_pos, weapon_groups, life):
 		pygame.sprite.Sprite.__init__(self)
 		self.surface = hero_surface
 		self.down_surface = hero_down_surface
 		self.image = hero_surface[0]
 		self.rect = self.image.get_rect()
 		self.rect.topleft = hero_init_pos
+		self.hero_init_pos = hero_init_pos
+		self.weapon_groups = weapon_groups
+		self.life = life
+		self.reset()
+		
+	def reset(self):
 		self.ticks = 0
 		self.is_hit = False
 		self.down_index = 0
-		self.weapon_groups = weapon_groups
-		self.power_bullet_num = 0
+		self.bullet_type_index = 0
 		self.bomb_num = 0
 		self.use_bomb = 0
+		self.immune_ticks = 0
 		
 	def move(self, offset):
 		x = self.rect.left + offset[pygame.K_RIGHT] - offset[pygame.K_LEFT]
@@ -123,22 +137,57 @@ class Hero(pygame.sprite.Sprite):
 		if type == GameGift.Bomb:
 			self.bomb_num += 3
 		elif type == GameGift.PowerBullet:
-			self.power_bullet_num += 20
+			self.bullet_type_index = self.bullet_type_index + 1 if self.bullet_type_index < (len(bullet_type)-1) else self.bullet_type_index
+			print("bullet_type_index:",self.bullet_type_index)
 		#elif type == GameGift.Laser:
-			
-	def play(self):	
+	
+	def isHeroCrash(self):
+		print("immune_ticks：", self.immune_ticks)
+		if self.immune_ticks <= 0:
+			self.is_hit = True
+			self.life -= 1
+			return 1
+		else:
+			return 0
+		
+	def restart(self):
+		self.reset()
+		self.immune_ticks = 180
+		self.rect.topleft = self.hero_init_pos
+		
+	def play(self):
+		def getBulletPosition(rect, position_type):
+			if position_type == 0:
+				return [rect.centerx - 3, rect.centery]
+			elif position_type == 1:
+				return [rect.x + 10, rect.centery]
+			else:
+				return [rect.x + rect.width - 20, rect.centery]
+		
+		def shootWeapon(type, rect, weapon_groups):
+			weapon_index = 0
+			if type == BulletType.OneWay:
+				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 0))
+			elif type == BulletType.TwoWay:
+				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 1))
+				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 2))
+			elif type == BulletType.ThreeWay or type == BulletType.ThreeWayPower:
+				if type == BulletType.ThreeWayPower:
+					weapon_index = 1
+				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 0))
+				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 1))
+				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 2))
+				
+		if self.immune_ticks > 0:
+			self.immune_ticks -= 1
 		if not self.is_hit:
 			if self.use_bomb:
 				self.use_bomb = 0
 				if self.bomb_num > 0:
 					self.bomb_num -= 1
-					self.weapon_groups[2].shootBullet(self.rect.midtop)
+					self.weapon_groups[2].shootWeapon(self.rect.midtop)
 			elif self.ticks % SHOOT_CYCLE == 0:
-				weapon_index = 0
-				if self.power_bullet_num > 0:
-					self.power_bullet_num -= 1
-					weapon_index = 1
-				self.weapon_groups[weapon_index].shootBullet(self.rect.midtop)		
+				shootWeapon(bullet_type[self.bullet_type_index], self.rect, self.weapon_groups)
 					
 		for weapon_group in self.weapon_groups:
 			weapon_group.update()
@@ -247,7 +296,7 @@ class WeaponGroup():
 		self.weapon_sound = weapon_sound
 		self.damage = damage
 	
-	def shootBullet(self, position):
+	def shootWeapon(self, position):
 		weapon = Weapon(self.surface, position)
 		self.group.add(weapon)
 		self.weapon_sound.play()

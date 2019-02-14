@@ -13,9 +13,10 @@ from resource import *
 
 # display information like score, bomb number		
 class ScreenInfo():
-	def __init__(self, bomb_surface):
+	def __init__(self, bomb_surface, plane_surface):
 		self.score = 0
 		self.bomb_surface = bomb_surface
+		self.plane_surface = plane_surface
 		self.latest_score = 0
 		
 	def addScore(self, score):
@@ -31,26 +32,30 @@ class ScreenInfo():
 			return True
 		return False
 		
-	def displayInfo(self, screen, game_over, bomb_num):
+	def displayInfo(self, screen, game_over, bomb_num, plane_life):
 		def displayScore(screen, score):
 			score_font = pygame.font.Font(None, 36)
-			score_text = score_font.render("Score: "+str(score), True, (128,128,128))
+			score_text = score_font.render(str(score), True, (128,128,128))
 			text_rect = score_text.get_rect()
-			text_rect.topleft = [10, 10]
+			text_rect.topleft = [SCREEN_WIDTH//2-35, 10]
 			screen.blit(score_text, text_rect)
 			
 		displayScore(screen, self.score)
 		if not game_over:
 			bomb_rect = self.bomb_surface.get_rect()
-			bomb_rect.topleft = [10, 30]
+			bomb_rect.topleft = [10, 0]
 			screen.blit(self.bomb_surface, bomb_rect)
 			
 			bomb_font = pygame.font.Font(None, 36)
 			bomb_text = bomb_font.render(" : "+str(bomb_num), True, (128,128,128))
 			text_rect = bomb_text.get_rect()
-			text_rect.topleft = [80, 45]
+			text_rect.topleft = [30, 10]
 			screen.blit(bomb_text, text_rect)
-
+			
+			for i in range(plane_life):
+				plane_rect = self.plane_surface.get_rect()
+				plane_rect.topleft = [SCREEN_WIDTH - 120 + (i * 40), 0]
+				screen.blit(self.plane_surface, plane_rect)
 
 class Game():
 	def __init__(self, caption, hero, screen_info):
@@ -101,7 +106,10 @@ class Game():
 			for group in gift_groups:
 				gift_size += len(group.group)
 			if gift_size == 0:
-				index = randint(0, gift_range)
+				if self.hero.bomb_num >= 3:
+					index = randint(1, gift_range)
+				else:
+					index = randint(0, gift_range)
 				gift_groups[index].createGift()
 
 	def play(self, enemy_groups, gift_groups):
@@ -134,8 +142,8 @@ class Game():
 		self.screen_info.addScore(checkBulletCollide(enemy_groups, self.hero.weapon_groups, self.screen, self.ticks))
 		
 		if checkHeroCollide(self.hero, enemy_groups):
-			self.hero.is_hit = True
-			game_over_sound.play()
+			if self.hero.isHeroCrash():
+				game_over_sound.play()
 		
 		for gift_group in gift_groups:
 			gift_group.checkHeroCollide(self.hero)
@@ -154,17 +162,19 @@ class Game():
 		self.screen.blit(self.hero.image, self.hero.rect)
 		self.ticks += 1
 		
-		self.screen_info.displayInfo(self.screen, 0, self.hero.bomb_num)
+		self.screen_info.displayInfo(self.screen, 0, self.hero.bomb_num, self.hero.life)
 	
 	def isGameOver(self):
 		if self.hero.down_index >= len(self.hero.down_surface):
-			return 1
-		else:
-			return 0
+			if self.hero.life <= 0:
+				return 1
+			else:
+				self.hero.restart()
+		return 0
 
 	def showGameOver(self):
 		self.screen.blit(gameover, (0,0))
-		self.screen_info.displayInfo(self.screen, 1, self.hero.bomb_num)
+		self.screen_info.displayInfo(self.screen, 1, self.hero.bomb_num, self.hero.life)
 		
 	def setPause(self):
 		self.pause = not self.pause
@@ -177,8 +187,8 @@ offset = {pygame.K_LEFT:0, pygame.K_RIGHT:0, pygame.K_UP:0, pygame.K_DOWN:0}
 
 pygame.init()
 
-(background, gameover, game_over_sound, bomb_surface) = initGame()
-screen_info = ScreenInfo(bomb_surface)
+(background, gameover, game_over_sound, bomb_surface, plane_surface) = initGame()
+screen_info = ScreenInfo(bomb_surface, plane_surface)
 myGame = Game('Air Craft Shooter!', initHero(), screen_info)
 enemy_groups = initEnemyGroups()
 gift_groups = initGiftGroups()
