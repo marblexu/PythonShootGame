@@ -8,6 +8,7 @@ import pygame
 from pygame.locals import *
 from sys import exit
 from random import randint
+from config import *
 from gameRole import *
 from resource import *
 
@@ -80,7 +81,7 @@ class Game():
 					index = 0
 			return index
 			
-		if ticks % 30 == 0:
+		if ticks % CREATE_CYCLE == 0:
 			if score < 10000:
 				enemy_range = 0
 			elif score < 20000:
@@ -93,7 +94,7 @@ class Game():
 	
 	# create a new gift if match condition
 	def createGift(self, gift_groups, ticks, screen_info):
-		if ticks % 30 == 0 and screen_info.shouldCreateGift():
+		if ticks % CREATE_CYCLE == 0 and screen_info.shouldCreateGift():
 			score = screen_info.getScore()
 			if score < 20000:
 				gift_range = 0
@@ -131,7 +132,7 @@ class Game():
 		self.clock.tick(FRAME_RATE)
 		self.screen.blit(background, (0,0))
 		
-		if self.ticks >= ANIMATE_CYCLE:
+		if self.ticks >= FRAME_RATE:
 			self.ticks = 0
 			
 		self.hero.play()

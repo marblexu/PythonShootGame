@@ -7,14 +7,7 @@ Created on Wed Feb 13 15:45:00 2019
 import pygame
 from random import randint
 from enum import Enum
-
-SCREEN_WIDTH = 480
-SCREEN_HEIGHT = 640
-
-FRAME_RATE = 60
-ANIMATE_CYCLE = 30
-SHOOT_CYCLE = 16
-ENEMY_SHOOT_CYCLE = 120
+from config import *
 
 class GameGift(Enum):
 	Bomb = 0
@@ -104,7 +97,7 @@ class Enemy(pygame.sprite.Sprite):
 			self.ticks += 1
 			if self.weapon_group is not None:
 				if self.ticks % ENEMY_SHOOT_CYCLE == 0:
-					shootWeapon(self.weapon_group, [self.rect.centerx, self.rect.y + self.image.get_height()], [0, 2])
+					shootWeapon(self.weapon_group, [self.rect.centerx, self.rect.y + self.image.get_height()], [0, ENEMY_SHOOT_SPEED])
 
 class Gift(pygame.sprite.Sprite):
 	def __init__(self, gift_surface, gift_init_pos, speed):
@@ -196,7 +189,7 @@ class Hero(pygame.sprite.Sprite):
 		
 		def shootWeapon(type, rect, weapon_groups):
 			weapon_index = 0
-			weapon_direction = [[0, -8],[-8, 0], [8, 0]]
+			weapon_direction = [[0, -SHOOT_SPEED],[-SHOOT_SPEED, 0], [SHOOT_SPEED, 0]]
 			if type == BulletType.OneWay:
 				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 0), weapon_direction[0])
 			elif type == BulletType.TwoWay:
@@ -214,22 +207,22 @@ class Hero(pygame.sprite.Sprite):
 				self.use_bomb = 0
 				if self.bomb_num > 0:
 					self.bomb_num -= 1
-					self.weapon_groups[2].shootWeapon(self.rect.midtop)
+					self.weapon_groups[2].shootWeapon(self.rect.midtop, [0, -SHOOT_SPEED])
 			elif self.ticks % SHOOT_CYCLE == 0:
 				shootWeapon(bullet_type[self.bullet_type_index], self.rect, self.weapon_groups)
 					
 		for weapon_group in self.weapon_groups:
 			weapon_group.update()
 
-		if self.ticks >= SHOOT_CYCLE:
+		if self.ticks >= ANIMATE_CYCLE:
 			self.ticks = 0
 		if self.is_hit:
 			assert self.down_index < len(self.down_surface)
 			self.image = self.down_surface[self.down_index]
-			if self.ticks % (SHOOT_CYCLE//2) == 0:
+			if self.ticks % (ANIMATE_CYCLE//2) == 0:
 				self.down_index += 1
 		else:
-			self.image = self.surface[self.ticks//(SHOOT_CYCLE//2)]
+			self.image = self.surface[self.ticks//(ANIMATE_CYCLE//2)]
 		self.ticks += 1
 
 class EnemyGroup():
@@ -258,10 +251,10 @@ class EnemyGroup():
 					enemy_init_pos = [randint(0, SCREEN_WIDTH - surface.get_width()), -surface.get_height()]
 					direction = [0, speed]
 				elif appearSide == 1: # from left side
-					enemy_init_pos = [-surface.get_width(), randint(0, (SCREEN_HEIGHT//3 - surface.get_height()))]
+					enemy_init_pos = [-surface.get_width(), randint(0, (ENEMY_APPEAR_HEIGHT - surface.get_height()))]
 					direction = [randint(1, speed), randint(1, speed)]
 				elif appearSide == 2: # from right side
-					enemy_init_pos = [SCREEN_WIDTH, randint(0, (SCREEN_HEIGHT//3 - surface.get_height()))]
+					enemy_init_pos = [SCREEN_WIDTH, randint(0, (ENEMY_APPEAR_HEIGHT - surface.get_height()))]
 					direction = [randint(-speed, -1), randint(1, speed)]
 			return (enemy_init_pos, direction)
 		
