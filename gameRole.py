@@ -166,7 +166,7 @@ class Hero(pygame.sprite.Sprite):
 		#elif type == GameGift.Laser:
 	
 	def isHeroCrash(self):
-		if self.immune_ticks <= 0:
+		if self.immune_ticks <= 0 and not self.is_hit:
 			self.is_hit = True
 			self.life -= 1
 			return 1
