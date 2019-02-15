@@ -12,6 +12,8 @@ from config import *
 from gameRole import *
 from resource import *
 
+BACKGROUND_IMAGE_HEIGHT = 800
+
 # display information like score, bomb number		
 class ScreenInfo():
 	def __init__(self, bomb_surface, plane_surface):
@@ -67,6 +69,7 @@ class Game():
 		self.screen_info = screen_info
 		self.ticks = 0
 		self.pause = False
+		self.backgound_y = background.get_height() # height of background image must be larger than SCREEN_HEIGHT
 	
 	# create a new enemy if match condition
 	def createEnemy(self, enemy_groups, ticks, score):
@@ -114,6 +117,15 @@ class Game():
 				gift_groups[index].createGift()
 
 	def play(self, enemy_groups, gift_groups):
+		def updateBackground(screen, image_height, current_y):
+			if current_y == 0:
+				screen.blit(background, (0, 0), (0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
+			elif current_y <= SCREEN_HEIGHT:
+				screen.blit(background, (0, 0), (0, image_height - current_y, SCREEN_WIDTH, current_y))
+				screen.blit(background, (0, current_y), (0, 0, SCREEN_WIDTH, SCREEN_HEIGHT - current_y))
+			else:
+				screen.blit(background, (0, 0), (0, image_height - current_y, SCREEN_WIDTH, image_height - current_y + SCREEN_HEIGHT))
+				
 		def checkBulletCollide(enemy_group, bullets_group, screen, ticks):
 			score = 0
 			for group in enemy_group:
@@ -130,7 +142,10 @@ class Game():
 			return collide
 		
 		self.clock.tick(FRAME_RATE)
-		self.screen.blit(background, (0,0))
+		if self.backgound_y == 0:
+			self.backgound_y = background.get_height()
+		updateBackground(self.screen, background.get_height(), self.backgound_y)	
+		self.backgound_y -= 1
 		
 		if self.ticks >= FRAME_RATE:
 			self.ticks = 0
