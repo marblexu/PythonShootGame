@@ -5,13 +5,15 @@ A improved shoot game based on https://github.com/Kill-Console/PythonShootGame.
 * improve plane collide check
 * enemy plane can appear from left，right and top side
 * enemy plane can shoot bullet
+* provide config.py to modify game difficulty
 
 # Introduce
-This project only include three simple .py files:
+This project only include four simple .py files:
 
 * shooter.py: initialization and main loop of the game.
 * gameRole.py: class of the game role and helper class to manage game role
 * resource.py: image and music related initialization
+* config.py: provide parameters to modify game difficulty
 
 # Requirement
 * Python 3.7
