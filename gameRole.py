@@ -84,16 +84,17 @@ class Enemy(pygame.sprite.Sprite):
 		if should_kill:
 			self.kill()
 		else:
-			if len(enemy_surface) >= 2:
-				if self.ticks >= ENEMY_SHOOT_CYCLE:
-					self.ticks = 0
+			if self.ticks >= ENEMY_SHOOT_CYCLE:
+				self.ticks = 0
 				
-				if self.is_hit:
-					self.is_hit -= 1
-					self.image = hit_surface
-				else:
-					self.image = enemy_surface[self.ticks//(ENEMY_SHOOT_CYCLE//2)]
-			
+			if self.is_hit:
+				self.is_hit -= 1
+				self.image = hit_surface
+			elif len(enemy_surface) >= 2:
+				self.image = enemy_surface[self.ticks//(ENEMY_SHOOT_CYCLE//2)]
+			else:
+				self.image = enemy_surface[0]
+
 			self.ticks += 1
 			if self.weapon_group is not None:
 				if self.ticks % ENEMY_SHOOT_CYCLE == 0:
@@ -288,7 +289,7 @@ class EnemyGroup():
 						score += self.score
 			else:
 				enemy_down.damage += bullets.damage
-				enemy_down.is_hit = 8
+				enemy_down.is_hit = ANIMATE_CYCLE//3
 				if enemy_down.damage >= self.health:
 					enemy_down.is_down = 1
 					self.group.remove(enemy_down)
