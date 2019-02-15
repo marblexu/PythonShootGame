@@ -14,6 +14,7 @@ SCREEN_HEIGHT = 640
 FRAME_RATE = 60
 ANIMATE_CYCLE = 30
 SHOOT_CYCLE = 16
+ENEMY_SHOOT_CYCLE = 120
 
 class GameGift(Enum):
 	Bomb = 0
@@ -24,55 +25,86 @@ class BulletType(Enum):
 	OneWay = 0
 	TwoWay = 1
 	ThreeWay = 2
-	ThreeWayPower = 3
 
-bullet_type = [BulletType.OneWay, BulletType.TwoWay, BulletType.ThreeWay, BulletType.ThreeWayPower]
+class EnemyType(Enum):
+	EnemyType1 = 1
+	EnemyType2 = 2
+	EnemyType3 = 3
+
+
+bullet_type = [BulletType.OneWay, BulletType.TwoWay, BulletType.ThreeWay]
 
 class Weapon(pygame.sprite.Sprite):
-	def __init__(self, weapon_surface, weapon_init_pos):
+	def __init__(self, weapon_surface, weapon_init_pos, direction):
 		pygame.sprite.Sprite.__init__(self)
 		self.image = weapon_surface
 		self.rect = self.image.get_rect()
 		self.rect.topleft = weapon_init_pos
-		self.speed = 8
+		self.direction = direction
 	
 	def update(self):
-		self.rect.top -= self.speed
-		if self.rect.top < -self.rect.height:
-			self.kill()
-
+		#direction[0]:x , direction[1]:y
+		if self.direction[0] == 0:
+			self.rect.y += self.direction[1]
+			if self.direction[1] > 0:				
+				if self.rect.y > SCREEN_HEIGHT:
+					self.kill()				
+			else:
+				if self.rect.y < -self.rect.height:
+					self.kill()
+		else:
+			self.rect.x += self.direction[0]
+			if self.direction[0] > 0:
+				if self.rect.x > SCREEN_WIDTH:
+					self.kill()	
+			else:
+				if self.rect.x < -self.rect.width:
+					self.kill()
+				
 class Enemy(pygame.sprite.Sprite):
-	def __init__(self, enemy_surface, enemy_init_pos, speed):
+	def __init__(self, enemy_surface, enemy_init_pos, direction, weapon_group):
 		pygame.sprite.Sprite.__init__(self)
 		self.image = enemy_surface
 		self.rect = self.image.get_rect()
 		self.rect.topleft = enemy_init_pos
-		self.speed = speed
+		self.direction = direction
 		self.down_index = 0
 		self.damage = 0
 		self.is_down = 0
 		self.is_hit = 0
 		self.ticks = 0
+		self.weapon_group = weapon_group
 
-	def update(self, enemy_surface, hit_surface=0):	
-		self.rect.top += self.speed
-		if self.rect.top > SCREEN_HEIGHT:
+	def update(self, enemy_surface, hit_surface=0):
+		def shootWeapon(weapon_group, position, direction):
+			weapon_group.shootWeapon(position, direction)
+			
+		#direction[0]:x , direction[1]:y
+		should_kill = False
+		self.rect.x += self.direction[0]
+		self.rect.y += self.direction[1]
+		if self.rect.x > SCREEN_WIDTH or self.rect.x < -self.image.get_width():
+			should_kill = True
+		if self.rect.y > SCREEN_HEIGHT or self.rect.y < -self.image.get_height():
+			should_kill = True
+				
+		if should_kill:
 			self.kill()
-		
-		if self.ticks >= SHOOT_CYCLE:
-			self.ticks = 0
-		
-		if self.is_hit:
-			self.is_hit -= 1
-			self.image = hit_surface
 		else:
-			size = len(enemy_surface)
-			if size == 2:
-				self.image = enemy_surface[self.ticks//(SHOOT_CYCLE//2)]
-			else:
-				self.image = enemy_surface[0]
-
-		self.ticks += 1
+			if len(enemy_surface) >= 2:
+				if self.ticks >= ENEMY_SHOOT_CYCLE:
+					self.ticks = 0
+				
+				if self.is_hit:
+					self.is_hit -= 1
+					self.image = hit_surface
+				else:
+					self.image = enemy_surface[self.ticks//(ENEMY_SHOOT_CYCLE//2)]
+			
+			self.ticks += 1
+			if self.weapon_group is not None:
+				if self.ticks % ENEMY_SHOOT_CYCLE == 0:
+					shootWeapon(self.weapon_group, [self.rect.centerx, self.rect.y + self.image.get_height()], [0, 2])
 
 class Gift(pygame.sprite.Sprite):
 	def __init__(self, gift_surface, gift_init_pos, speed):
@@ -138,11 +170,9 @@ class Hero(pygame.sprite.Sprite):
 			self.bomb_num += 3
 		elif type == GameGift.PowerBullet:
 			self.bullet_type_index = self.bullet_type_index + 1 if self.bullet_type_index < (len(bullet_type)-1) else self.bullet_type_index
-			print("bullet_type_index:",self.bullet_type_index)
 		#elif type == GameGift.Laser:
 	
 	def isHeroCrash(self):
-		print("immune_ticks：", self.immune_ticks)
 		if self.immune_ticks <= 0:
 			self.is_hit = True
 			self.life -= 1
@@ -166,17 +196,16 @@ class Hero(pygame.sprite.Sprite):
 		
 		def shootWeapon(type, rect, weapon_groups):
 			weapon_index = 0
+			weapon_direction = [[0, -8],[-8, 0], [8, 0]]
 			if type == BulletType.OneWay:
-				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 0))
+				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 0), weapon_direction[0])
 			elif type == BulletType.TwoWay:
-				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 1))
-				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 2))
-			elif type == BulletType.ThreeWay or type == BulletType.ThreeWayPower:
-				if type == BulletType.ThreeWayPower:
-					weapon_index = 1
-				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 0))
-				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 1))
-				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 2))
+				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 1), weapon_direction[0])
+				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 2), weapon_direction[0])
+			elif type == BulletType.ThreeWay:
+				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 0), weapon_direction[0])
+				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 1), weapon_direction[0])
+				weapon_groups[weapon_index].shootWeapon(getBulletPosition(self.rect, 2), weapon_direction[0])
 				
 		if self.immune_ticks > 0:
 			self.immune_ticks -= 1
@@ -204,7 +233,7 @@ class Hero(pygame.sprite.Sprite):
 		self.ticks += 1
 
 class EnemyGroup():
-	def __init__(self, surface, hit_surface, down_surface, down_sound, score, health, speed):
+	def __init__(self, surface, hit_surface, down_surface, down_sound, score, health, speed, enemy_type, weapon_group):
 		self.surface = surface
 		self.hit_surface = hit_surface
 		self.down_surface = down_surface
@@ -214,16 +243,41 @@ class EnemyGroup():
 		self.score = score
 		self.health = health
 		self.speed = speed
+		self.enemy_type = enemy_type
+		self.weapon_group = weapon_group
 	
 	def createEnemy(self):
-		enemy = Enemy(self.surface[0], [randint(0, SCREEN_WIDTH - self.surface[0].get_width()), -self.surface[0].get_height()], self.speed)
+		def getDirection(surface, speed, enemy_type):
+			if enemy_type == EnemyType.EnemyType3:
+				enemy_init_pos = [randint(0, SCREEN_WIDTH - surface.get_width()), -surface.get_height()]
+				direction = [0, speed]
+			else:
+				# enemy can appear from top side, left side,  and right side
+				appearSide = randint(0, 2)
+				if appearSide == 0: # from top side
+					enemy_init_pos = [randint(0, SCREEN_WIDTH - surface.get_width()), -surface.get_height()]
+					direction = [0, speed]
+				elif appearSide == 1: # from left side
+					enemy_init_pos = [-surface.get_width(), randint(0, (SCREEN_HEIGHT//3 - surface.get_height()))]
+					direction = [randint(1, speed), randint(1, speed)]
+				elif appearSide == 2: # from right side
+					enemy_init_pos = [SCREEN_WIDTH, randint(0, (SCREEN_HEIGHT//3 - surface.get_height()))]
+					direction = [randint(-speed, -1), randint(1, speed)]
+			return (enemy_init_pos, direction)
+		
+		(enemy_init_pos, direction)	= getDirection(self.surface[0], self.speed, self.enemy_type)
+		enemy = Enemy(self.surface[0], enemy_init_pos, direction, self.weapon_group)
 		self.group.add(enemy)
 		
 	def update(self):
-		self.group.update(self.surface, self.hit_surface) 
+		self.group.update(self.surface, self.hit_surface)
+		if self.weapon_group is not None:
+			self.weapon_group.update()
 	
 	def draw(self, screen):
 		self.group.draw(screen)
+		if self.weapon_group is not None:
+			self.weapon_group.draw(screen)
 	
 	def checkBulletCollide(self, bullets, screen, ticks):
 		score = 0
@@ -248,7 +302,7 @@ class EnemyGroup():
 				else:
 					self.down_group.remove(enemy_down)
 		return score
-	
+
 	def checkHeroCollide(self, hero):
 		enemy_down_list = pygame.sprite.spritecollide(hero, self.group, False)
 		collide = False
@@ -260,6 +314,14 @@ class EnemyGroup():
 					enemy_down.is_down = 1
 					collide = True
 		
+		if not collide and self.weapon_group is not None:
+			bullet_hit_list = pygame.sprite.spritecollide(hero, self.weapon_group.group, False)
+			if len(bullet_hit_list) > 0:
+				for bullet_hit in bullet_hit_list:
+					if pygame.sprite.collide_circle_ratio(0.7)(bullet_hit, hero):
+						self.weapon_group.group.remove(bullet_hit)
+						collide = True
+			
 		return collide
 
 class GiftGroup():
@@ -284,7 +346,7 @@ class GiftGroup():
 		gift_hit_list = pygame.sprite.spritecollide(hero, self.group, False)
 		if len(gift_hit_list) > 0:
 			for gift in gift_hit_list:
-				if pygame.sprite.collide_circle_ratio(0.7)(gift, hero):
+				if pygame.sprite.collide_circle_ratio(0.8)(gift, hero):
 					self.group.remove(gift)
 					self.gift_sound.play()
 					hero.addGift(self.type)
@@ -296,8 +358,27 @@ class WeaponGroup():
 		self.weapon_sound = weapon_sound
 		self.damage = damage
 	
-	def shootWeapon(self, position):
-		weapon = Weapon(self.surface, position)
+	def shootWeapon(self, position, direction):
+		weapon = Weapon(self.surface, position, direction)
+		self.group.add(weapon)
+		self.weapon_sound.play()
+
+	def update(self):
+		self.group.update()
+	
+	def draw(self, screen):
+		self.group.draw(screen)
+
+class EnemyWeaponGroup():
+	def __init__(self, weapon_surface, weapon_sound, damage):
+		self.surface = weapon_surface
+		self.group = pygame.sprite.Group()
+		self.weapon_sound = weapon_sound
+		self.damage = damage
+	
+	def shootWeapon(self, position, direction):
+		assert (direction[0] != 0) or (direction[1] != 0)
+		weapon = Weapon(self.surface, position, direction)
 		self.group.add(weapon)
 		self.weapon_sound.play()
 
