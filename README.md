@@ -3,6 +3,8 @@ A improved shoot game based on https://github.com/Kill-Console/PythonShootGame.
 * add two types of enemy planes
 * add two types of weapons (bomb, power bullet)
 * improve plane collide check
+* enemy plane can appear from left，right and top side
+* enemy plane can shoot bullet
 
 # Introduce
 This project only include three simple .py files:
